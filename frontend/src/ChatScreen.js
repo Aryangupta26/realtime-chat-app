@@ -12,7 +12,17 @@ export default function ChatScreen({ username, onLogout }) {
 
   useEffect(() => {
     socket.connect();
-    socket.emit('join', username);
+    
+    // Send join event when connecting (or reconnecting)
+    const onConnect = () => {
+      socket.emit('join', username);
+    };
+    socket.on('connect', onConnect);
+    
+    // If already connected, emit immediately
+    if (socket.connected) {
+      socket.emit('join', username);
+    }
 
     const fetchMessages = async () => {
       try {
@@ -42,6 +52,7 @@ export default function ChatScreen({ username, onLogout }) {
     });
 
     return () => {
+      socket.off('connect', onConnect);
       socket.off('receive_message');
       socket.off('online_users');
       socket.off('user_typing');
